@@ -29,11 +29,16 @@ Route::any('/users/{user}/changepassword', 'Admin\UsersController@changepassword
 
 
 // PAGES MODUL START
-Route::get('/pages/{page?}', 'Admin\PagesController@index')->name('pages.index');
 Route::get('/pages/create', 'Admin\PagesController@create')->name('pages.create');
 Route::post('/pages/store', 'Admin\PagesController@store')->name('pages.store');
+Route::get('/pages/{page?}', 'Admin\PagesController@index')->name('pages.index');
 Route::get('/pages/{page}/edit', 'Admin\PagesController@edit')->name('pages.edit');
 Route::post('/pages/{page}/edit', 'Admin\PagesController@update')->name('pages.update');
 Route::get('/pages/{page}/delete', 'Admin\PagesController@delete')->name('pages.delete');
 Route::get('/pages/{page}/changestatus', 'Admin\PagesController@changestatus')->name('pages.changestatus');
 // PAGES MODUL END
+
+
+// FRONTEND START
+Route::get('/kursevi-programiranja-beograd/{page}/{slug}', 'Frontend\FrontendController@page')->name('pages.show');
+// FRONTEND END
