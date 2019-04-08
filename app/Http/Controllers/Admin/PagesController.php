@@ -10,6 +10,10 @@ use Intervention\Image\Facades\Image;
 
 class PagesController extends Controller
 {
+    public function __construct() {
+        $this->middleware('auth');
+    }
+    
     /**
      * Display a listing of the resource.
      *
@@ -27,6 +31,7 @@ class PagesController extends Controller
         
         $rows = Page::notdeleted()
                 ->where('page_id', $pageId)
+                ->orderBy('order_number', 'ASC')
                 ->get();
         
         return view('admin.pages.index', compact(['rows', 'page']));
@@ -84,9 +89,11 @@ class PagesController extends Controller
             $file = request()->image;
             $fileExtension = $file->getClientOriginalExtension();
             
+            $timeStamp = Str::slug(now(), '-');
+            
             $fileName = $file->getClientOriginalName();
             $fileName = pathinfo($fileName, PATHINFO_FILENAME);
-            $fileName = config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '.' . $fileExtension;
+            $fileName = config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '.' . $fileExtension;
             
             //echo public_path('/upload/pages/');
             $file->move(public_path('/upload/pages/'), $fileName);
@@ -99,7 +106,7 @@ class PagesController extends Controller
             $intervetionImage->resize(1140, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameXL = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-xl.' . $fileExtension;
+            $fileNameXL = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-xl.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameXL));
             
             // m velicina
@@ -107,7 +114,7 @@ class PagesController extends Controller
             $intervetionImage->resize(800, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameM = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-m.' . $fileExtension;
+            $fileNameM = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-m.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameM));
             
             // s velicina
@@ -115,9 +122,11 @@ class PagesController extends Controller
             $intervetionImage->resize(300, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameS = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-s.' . $fileExtension;
+            $fileNameS = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-s.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameS));
         }
+        
+        $row->order_number = Page::getMyOrderNUmber(request()->page_id);
         
         $row->save();
         
@@ -126,16 +135,49 @@ class PagesController extends Controller
         
         return redirect()->route('pages.index');
     }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
+    
+    public function neworder()
+    {        
+        // validacija obavezna
+        
+        $pageId = request()->page_id;
+        $newOrder = request()->neworder;
+        
+        // string u niz
+        $newOrder = explode(',', $newOrder);
+        // [4,3,1]
+        $i = 0;
+        foreach ($newOrder as $value) {
+            $page = Page::findOrFail($value);
+            $page->order_number = $i;
+            $page->save();
+            $i++;
+        }
+        
+        $html = '
+                <div class="card mb-4 py-3 border-left-success">
+                    <div class="card-body">
+                        Successfully changed order
+                    </div>
+                </div>
+            ';
+                
+        
+        
+        return $html;
+        
+//        session()->flash('message-type', 'success');
+//        session()->flash('message-text', 'Successfully changed order');
+//        
+//        
+//        if($pageId == 0){
+//            return redirect()->route('pages.index');
+//        } else{
+//            return redirect()->route('pages.index', ['page' => $pageId]);
+//        }
+        
+        
+        
     }
 
     /**
@@ -192,9 +234,11 @@ class PagesController extends Controller
             $file = request()->image;
             $fileExtension = $file->getClientOriginalExtension();
             
+            $timeStamp = Str::slug(now(), '-');
+            
             $fileName = $file->getClientOriginalName();
             $fileName = pathinfo($fileName, PATHINFO_FILENAME);
-            $fileName = config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '.' . $fileExtension;
+            $fileName = config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '.' . $fileExtension;
             
             //echo public_path('/upload/pages/');
             $file->move(public_path('/upload/pages/'), $fileName);
@@ -207,7 +251,7 @@ class PagesController extends Controller
             $intervetionImage->resize(1140, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameXL = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-xl.' . $fileExtension;
+            $fileNameXL = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-xl.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameXL));
             
             // m velicina
@@ -215,7 +259,7 @@ class PagesController extends Controller
             $intervetionImage->resize(800, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameM = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-m.' . $fileExtension;
+            $fileNameM = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-m.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameM));
             
             // s velicina
@@ -223,7 +267,7 @@ class PagesController extends Controller
             $intervetionImage->resize(300, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
-            $fileNameS = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . Str::slug(now(), '-') . '-s.' . $fileExtension;
+            $fileNameS = '/upload/pages/' . config('app.seo-image-prefiks') . Str::slug(request('title'), '-') . '-' . $timeStamp . '-s.' . $fileExtension;
             $intervetionImage->save(public_path($fileNameS));
         }
         

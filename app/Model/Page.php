@@ -55,4 +55,17 @@ class Page extends Model
         
         return $imagePath;
     }
+    
+    public static function getMyOrderNUmber($parentId){
+        $lastPage = Page::notdeleted()
+                ->where('page_id', $parentId)
+                ->orderBy('order_number', 'DESC')
+                ->first();
+        
+        if($lastPage){
+            return $lastPage->order_number + 1;
+        } else {
+            return 0;
+        }
+    }
 }

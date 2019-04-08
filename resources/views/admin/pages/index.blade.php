@@ -5,16 +5,17 @@
 @endsection
 
 @section('custom-css')
-<!-- Custom styles for this page -->
-<link href="/admin/assets/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 @endsection
 
 @section('content')
 <!-- Page Heading -->
 <h1 class="h3 mb-4 text-gray-800">{{ __('Pages') }}</h1>
 
+<div id='errors-wrapper'>
 @include('admin.layout.partials.messages')
-
+</div>
+    
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-primary">
@@ -30,16 +31,20 @@
             <table class="table table-bordered" id="rows" width="100%" cellspacing="0">
                 <thead>
                     <tr>
+                        <th class="pera">#</th>
                         <th>Image</th>
                         <th>Title</th>
                         <th>Active</th>
                         <th>Options</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="sortable">
                     @if(count($rows) > 0)
                         @foreach($rows as $value)
-                            <tr>
+                            <tr id="{{ $value->id }}">
+                                <td class="pera">
+                                    {{ $value->order_number }}
+                                </td>
                                 <td>
                                     <img src='{{ $value->getImage("s") }}'>
                                 </td>
@@ -65,6 +70,22 @@
                 </tbody>
             </table>
         </div>
+        
+        <div id='form-state' class="d-none">
+            <form class="text-right" method="post" action="{{ route('pages.neworder') }}">
+                @csrf
+                
+                @if(!is_null($page))
+                <input type="hidden" name="page_id" value="{{ $page->id }}">
+                @else
+                <input type="hidden" name="page_id" value="0">
+                @endif
+                
+                <input type="hidden" value="" id="input-new-order-state" name="neworder">
+                <button class="btn btn-success">Change pages order</button>
+            </form>
+        </div>
+        
     </div>
 </div>
 
@@ -92,19 +113,29 @@
 
 @section('custom-js')
 <!-- Page level plugins -->
-<script src="/admin/assets/vendor/datatables/jquery.dataTables.min.js"></script>
-<script src="/admin/assets/vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script>
 // Call the dataTables jQuery plugin
 $(document).ready(function() {
-  $('#rows').DataTable({
-        "order": [[ 1, "asc" ]],
-        "columnDefs": [
-            { "orderable": false, "targets": [0, 3] },
-            { "searchable": false, "targets": [0, 2, 3] }
-        ]
-  });
+    $('#form-state button').on('click', function(e){
+        e.preventDefault();
+        $.ajax({
+            url: "{{route('pages.neworder')}}",
+            type: 'post',
+            data: {
+                'page_id': $('form [name=page_id]').val(),
+                'neworder': $('#input-new-order-state').val(),
+                '_token' : $('form [name=_token]').val()
+            },
+            dataType: 'html'
+        }).done(function(data){
+            $('#errors-wrapper').html(data);
+        }).fail(function(jqXHR, error, message){
+            alert(message);
+        }).always(function(){
+            
+        });
+    });
 });
 
 
@@ -120,6 +151,20 @@ $('#deleteModal').on('show.bs.modal', function (event) {
 $(function () {
   $('.tooltip-custom').tooltip()
 })
+
+$( function() {
+    $( "#sortable" ).sortable({
+        update: function (event, ui){
+            $("#input-new-order-state").val($('#sortable').sortable("toArray"));
+            $("#form-state").removeClass('d-none');
+        }
+    });
+    $( "#sortable" ).disableSelection();
+} );
+
+
+
+
 
 </script>
 
