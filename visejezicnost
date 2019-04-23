@@ -1,0 +1,22 @@
+1. napraviti languages tabelu (vidi migracije)
+2.napraviti medjutabelu pages_content(vise-na-vise veza)izmedju page modela i language modela; 
+pošto je pages tabela u ovom projektu vec postojala izbaciti iz nje sve kolone koje se prevode(one ce biti u medjutabeli) a međutabelu vezati spoljnim ključevima za pages i languages tabelu
+(vidi migracije)
+3.napraviti Language model
+4. vezati Page i Language modele belongsToMany funkcijama, definisati naziv međutabele kao drugi argument, i obavezno dodati withPivot f-ju za sve kolone koje nisu page_id i language_id 
+(vidi modele i pages i languages f-je)
+5. kreiranje nove strane ide preko create forme; njoj se pored pagesToplevel podataka salju i podaci o jezicima da bi nazivi toplevel strana bili ok ispisani,to sve objedinjeno kao $data,
+ vidi Pages controller akcija create
+6. submit forme ide na store akciju koja u bazu snima stranu na default jeziku (onaj kojem je prioritet 0) i prazne zapise na svim ostalim jezicima koji nisu banovani
+yapis se pravi tako sto se najpre napravi nova strana u pages tabeli (u sustini samo dobije id) a zatim se za tu stranu, preko languages f-je pristupa pivot tabeli i radi attach,
+ uz prosledjivanje informacije koji je language_id plus informacije o svim kolonama koje se dodaju, tipa title, desc...
+7. na dnu create forme je opcija snimanja te strane i odmah nastavljanja na formu za snimanje na sledecem jeziku...ova opcija ustvari vodi na update akciju, i na formu se prosledjuje i informacija
+koji je Last Priority language da kada se on edituje ne bi vise bilo opcija da se nastavi dalje.(button disabled)
+8. update akcija u Pages controlleru proverava da li red vec postoji (ne postoji u opciji da smo naknadno dodali neki jeyik u languages tabelu) i u skladu sa tim ili radi updatePivotTable
+ ili pravi novi red
+9.index akcija Pages controllera ispisuje sve podatke iz pages_content tabele(ne bas sjajno reseno, ali u view-u postoji mali deo pripreme tih podataka da bi se ispisali iz pivota)
+10. na frontendu ispis ide tako sto se sve rute preimenuju po principu /page/{short_lang ?} gde je ovo opcioni parametar tipa /sr, koji ako se ne navede ide ispis na default jeziku
+11.opet verovatno ne bas pametno, u view-u postoji poseban show-sr blade koji se zove u slucaju da se trazi strana na tom jeziku. cisto primera radi show akciji frontend controllera 
+prosledjeni su naslovi na jeyiku koji se trazi i samo ispisani na strani... pa dalje doradite sami :)
+12. to je ukratko, sta god bude jos trebalo pitajte
+

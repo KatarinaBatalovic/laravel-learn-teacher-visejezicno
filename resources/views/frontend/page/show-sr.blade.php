@@ -16,6 +16,7 @@
 @section('content')
 <div class="c-content-blog-post-1-view">
     <div class="c-content-blog-post-1">
+        Ovo je strana na srpskom jeziku (drugi jeyik po prioritetu)
         @if(isset($page->image) && !empty($page->image))
         <div class="c-media">
             <div class="c-content-media-2-slider" data-slider="owl">

@@ -68,4 +68,7 @@ class Page extends Model
             return 0;
         }
     }
+    public function languages(){
+        return $this->belongsToMany(Language::class, 'pages_content')->withPivot('title', 'description', 'content')->withTimestamps();
+    }
 }

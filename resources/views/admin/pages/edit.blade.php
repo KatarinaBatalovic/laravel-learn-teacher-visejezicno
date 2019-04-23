@@ -1,7 +1,11 @@
 @extends('admin.layout.main')
 
 @section('seo-title')
-<title>{{ __('Edit page') }} {{ $page->title }} {{ config('app.seo-separator') }} {{ config('app.name') }}</title>
+@php
+$current = $page->languages()->where('language_id', $language->id)->first();
+
+@endphp
+<title>{{ __('Edit page') }} {{ isset($current) ? $current->pivot->title : '' }} {{ config('app.seo-separator') }} {{ config('app.name') }}</title>
 @endsection
 
 @section('custom-css')
@@ -10,7 +14,7 @@
 
 @section('content')
 <!-- Page Heading -->
-<h1 class="h3 mb-4 text-gray-800">{{ __('Edit page') }} {{ $page->title }} </h1>
+<h1 class="h3 mb-4 text-gray-800">{{ __('Edit page') }} {{ isset($current) ? $current->pivot->title : '' }} {{ (isset($language)) ? $language->lang : 'English' }} </h1>;
 <div class='row'>
     <div class="offset-lg-2 col-lg-8">
         <!-- Basic Card Example -->
@@ -19,7 +23,7 @@
                 <h6 class="m-0 font-weight-bold text-primary">{{ __('Current page details') }}</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('pages.update', ['page' => $page->id]) }}" method="post" enctype="multipart/form-data">
+                <form action="{{ route('pages.update', ['page' => $page->id, 'language'=>$language->id]) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="form-group">
                         <div class="row">
@@ -27,9 +31,9 @@
                             <div class="col-sm-3">
                                 <select name='page_id' class="form-control">
                                     <option value='0'>Top level page</option>
-                                    @if(count($pagesTopLevel) > 0)
-                                        @foreach($pagesTopLevel as $value)
-                                        <option value='{{ $value->id }}' {{ (old('page_id', $page->page_id) == $value->id) ? 'selected':'' }}>{{ $value->title }}</option>
+                                    @if(count($data) > 0)
+                                        @foreach($data as $value)
+                                        <option value='{{ isset($value) ? $value->pivot->page_id : "" }}'>{{ isset($value) ? $value->pivot->title : ""  }}</option>
                                         @endforeach
                                     @endif
                                 </select>
@@ -43,7 +47,7 @@
                     </div>
                     <div class="form-group">
                         <label>Title *</label>
-                        <input type="text" name='title' value='{{ old("title", $page->title) }}' class="form-control">
+                        <input type="text" name='title' value='{{ old("title") }}' class="form-control">
                         @if($errors->has('title'))
                         <div class='text text-danger'>
                             {{ $errors->first('title') }}
@@ -52,7 +56,7 @@
                     </div>
                     <div class="form-group">
                         <label>Description *</label>
-                        <textarea name='description' class="form-control">{!! old('description', $page->description) !!}</textarea>
+                        <textarea name='description' class="form-control">{!! old('description', isset($current) ? $current->pivot->description : '') !!}</textarea>
                         @if($errors->has('description'))
                         <div class='text text-danger'>
                             {{ $errors->first('description') }}
@@ -74,7 +78,7 @@
                     </div>
                     <div class="form-group">
                         <label>Content *</label>
-                        <textarea id='page-content' name='content' class="form-control">{!! old('content', $page->content) !!}</textarea>
+                        <textarea id='page-content' name='content' class="form-control">{!! old('content', isset($current) ? $current->pivot->content : '') !!}</textarea>
                         @if($errors->has('content'))
                         <div class='text text-danger'>
                             {{ $errors->first('content') }}
@@ -220,7 +224,11 @@
                         </div>
                     </fieldset>
                     <div class="form-group text-right">
-                        <button type='submit' class="btn btn-primary">Save</button>
+                        <button type='submit' name='action' value='save' class="btn btn-primary">Save</button>
+                         <button type='submit' name='action' value='save-and-add-next' class="btn btn-warning" {{(isset($language)&&($language->id==$lastpriority->id)) ? 'disabled' : ""}} >
+
+          Save&Edit further
+      </button>
                     </div>
                 </form>
             </div>

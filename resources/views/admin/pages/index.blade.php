@@ -33,7 +33,12 @@
                     <tr>
                         <th class="pera">#</th>
                         <th>Image</th>
-                        <th>Title</th>
+                        @if(count($languages)>0)
+                        @foreach($languages as $value)
+                        <th>Title-{{$value->lang}}</th>
+                       
+                        @endforeach
+                         @endif
                         <th>Active</th>
                         <th>Options</th>
                     </tr>
@@ -42,16 +47,27 @@
                     @if(count($rows) > 0)
                         @foreach($rows as $value)
                             <tr id="{{ $value->id }}">
+                            
                                 <td class="pera">
                                     {{ $value->order_number }}
                                 </td>
                                 <td>
                                     <img src='{{ $value->getImage("s") }}'>
                                 </td>
+                                    @foreach($languages as $value2)
                                 <td>
-                                    {{ $value->title }}
-                                    <a data-placement="top" title='Sub pages' href='{{ route("pages.index", ["page" => $value->id]) }}' class="btn btn-sm btn-warning tooltip-custom"><i class="fas fa-caret-square-down fa-sm fa-fw"></i> ({{ count($value->pages) }})</a>
+                                    @php
+                                    $data=$value2->pages()->where('pages.id', $value->id)->first();
+                                    if(isset($data)&&!empty($data)){
+                                    echo $data->pivot->title;
+                                    }
+                                    @endphp
+                                    <a href="{{route('pages.edit', ['page'=>$value->id, 'language'=>$value2->id])}}">edit</a> 
+                                 
+                                
+                                   
                                 </td>
+                                   @endforeach
                                 <td class="text-center text-white">
                                     @if($value->active == 1)
                                     <a href='{{ route("pages.changestatus", ["page" => $value->id]) }}' class='btn btn-sm btn-success'>{{ __('Active')}}</a>
@@ -60,10 +76,11 @@
                                     @endif
                                 </td>
                                 <td class="text-center text-white">
-                                    <a data-placement="top" title='Edit page' href='{{ route("pages.edit", ["page" => $value->id]) }}' class="btn btn-sm btn-primary tooltip-custom">{{ __('Edit') }}</a>
+                                  
                                     <a data-placement="top" title='Preview page' href="{{ route('pages.show', ['page'=> $value->id, 'slug' => Str::slug($value->title, '-') ]) }}" class="btn btn-sm btn-success tooltip-custom"><i class="fas fa-eye fa-sm fa-fw"></i></a>
                                     <a data-placement="top" title='Delete page {{ $value->title }}' data-name='{{ $value->title }}' data-toggle="modal" data-target="#deleteModal" data-href='{{ route("pages.delete", ["page" => $value->id]) }}' class="btn btn-sm btn-danger tooltip-custom">{{ __('Delete') }}</a>
                                 </td>
+                             
                             </tr>
                         @endforeach
                     @endif

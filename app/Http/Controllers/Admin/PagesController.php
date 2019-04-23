@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Model\Page;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
+use App\Model\Language;
 
 class PagesController extends Controller
 {
@@ -28,13 +29,18 @@ class PagesController extends Controller
             // subpages
             $pageId = $page->id;
         }
-        
+//        $languages = Language::where('ban', 0)
+//                ->orderBy('priority', 'asc')
+//                ->get();
         $rows = Page::notdeleted()
                 ->where('page_id', $pageId)
                 ->orderBy('order_number', 'ASC')
                 ->get();
-        
-        return view('admin.pages.index', compact(['rows', 'page']));
+        $languages = Language::where('ban', 0)
+                ->orderBy('priority', 'asc')
+                ->get();
+        //dd($languages);
+        return view('admin.pages.index', compact(['rows', 'page', 'languages']));
     }
 
     /**
@@ -48,7 +54,14 @@ class PagesController extends Controller
         $pagesTopLevel = Page::topLevel()
                 ->notdeleted()
                 ->get();
-        return view('admin.pages.create', compact('pagesTopLevel'));
+        $language = Language::where('ban',0)
+                    ->orderBy('priority', 'asc')
+                ->first();
+        foreach($pagesTopLevel as $page){
+            $data[] = $page->languages()->where('language_id', $language->id)->first();
+        }
+      //  dd($data);
+        return view('admin.pages.create', compact( 'data'));
     }
 
     /**
@@ -64,10 +77,9 @@ class PagesController extends Controller
         $pagesIds = implode(",", $pagesIds);
         $data = request()->validate([
             'page_id' => 'required|integer|in:'.$pagesIds,
-            'title' => 'required|string|min:3|max:191',
-            'description' => 'required|string|max:191',
+            
             'image' => 'required|image|mimes:jpeg,bmp,png,jpg',
-            'content' => 'required|string|min:3|max:65000',
+            
             'layout' => 'required|string|in:fullwidth,leftaside,rightaside',
             'contact_form' => 'required|boolean',
             'header' => 'required|boolean',
@@ -75,7 +87,17 @@ class PagesController extends Controller
             'footer' => 'required|boolean',
             'active' => 'required|boolean',
         ]);
-        
+        $data2 = request()->validate([
+            'title' => 'required|string|min:3|max:191',
+            'description' => 'required|string|max:191',
+            
+            'content' => 'required|string|min:3|max:65000',
+        ]);
+        $languages = Language::where('ban',0)
+                    ->orderBy('priority', 'asc')
+                ->get();
+        $language = $languages[0];
+       // dd($language); 
         $row = new Page();
         
         unset($data['image']);
@@ -129,11 +151,27 @@ class PagesController extends Controller
         $row->order_number = Page::getMyOrderNUmber(request()->page_id);
         
         $row->save();
-        
+        $row->languages()->attach($language->id, ['title'=>$data2['title'], 'description'=>$data2['description'], 'content'=>$data2['content']]);
+        $first = TRUE;
+        foreach ($languages as $value) {
+            if (!$first) {
+                $row->languages()->attach($value->id, ['title' => NULL, 'description' => NULL, 'content'=>NULL]);
+            } else {
+               $first = FALSE;
+            }
+        }
         session()->flash('message-type', 'success');
         session()->flash('message-text', 'Successfully created page' . $row->title . '!!!');
+        switch (request()->input('action')) {
+            case 'save':
+                return redirect(route('pages.index'));
+            case 'save-and-add-next':
+
+                return redirect()->route('pages.edit', [ 'page_id' => $row->id, 'language_id' => Language::nextLang($language)]);
+
+        }
         
-        return redirect()->route('pages.index');
+        
     }
     
     public function neworder()
@@ -186,13 +224,21 @@ class PagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(Page $page)
+    public function edit(Page $page, Language $language)
     {
         $pagesTopLevel = Page::topLevel()
                 ->notdeleted()
                 ->where('id', '!=', $page->id)
                 ->get();
-        return view('admin.pages.edit', compact(['pagesTopLevel', 'page']));
+       
+        foreach($pagesTopLevel as $value){
+            $data[] = $value->languages()->where('language_id', $language->id)->first();
+        }
+       //dd($data);
+         $lastpriority = Language::notbanned()
+                   ->orderBy('priority', 'desc')
+                   ->first();
+        return view('admin.pages.edit', compact(['data', 'page', 'language', 'lastpriority']));
     }
 
     /**
@@ -202,17 +248,16 @@ class PagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Page $page)
+    public function update(Request $request, Page $page, Language $language)
     {
         $pagesIds = Page::pluck('id')->all();
         $pagesIds[] = 0;
         $pagesIds = implode(",", $pagesIds);
         $data = request()->validate([
             'page_id' => 'required|integer|in:'.$pagesIds,
-            'title' => 'required|string|min:3|max:191',
-            'description' => 'required|string|max:191',
+          
             'image' => 'nullable|mimes:jpeg,bmp,png,jpg',
-            'content' => 'required|string|min:3|max:65000',
+      
             'layout' => 'required|string|in:fullwidth,leftaside,rightaside',
             'contact_form' => 'required|boolean',
             'header' => 'required|boolean',
@@ -220,6 +265,12 @@ class PagesController extends Controller
             'footer' => 'required|boolean',
             'active' => 'required|boolean',
         ]);
+         $data2 = request()->validate([
+        'title' => 'required|string|min:3|max:191',
+            'description' => 'required|string|max:191',
+          
+            'content' => 'required|string|min:3|max:65000',
+             ]);
         
         $row = $page;
         
@@ -271,12 +322,33 @@ class PagesController extends Controller
             $intervetionImage->save(public_path($fileNameS));
         }
         
-        $row->save();
+         $row->save();
+         $translation =  $page->languages()->where('language_id', $language->id)->exists();
+         
+         if($translation){
+         $page->languages()->updateExistingPivot($language->id, ['title'=>$data2['title'], 'description'=>$data2['description'], 'content'=>$data2['content']]);
+         }else{
+           $page->languages()->attach($language->id, ['title'=>$data2['title'], 'description'=>$data2['description'], 'content'=>$data2['content']]); 
+         }
         
         session()->flash('message-type', 'success');
         session()->flash('message-text', 'Successfully edited page' . $row->title . '!!!');
         
-        return redirect()->route('pages.index');
+         switch (request()->input('action')) {
+            case 'save':
+                return redirect(route('pages.index'));
+            case 'save-and-add-next':
+
+               $lang_id = Language::nextLang($language);
+               
+               if (!$lang_id) {
+                    return redirect()->route('pages.index');
+                } else {
+
+                return redirect()->route('pages.edit', ['page_id' => $page->id, 'language_id' => $lang_id]);
+                }
+        }
+        
     }
 
     public function changestatus(Page $page){

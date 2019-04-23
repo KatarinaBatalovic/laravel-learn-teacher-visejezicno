@@ -10,7 +10,8 @@
 
 @section('content')
 <!-- Page Heading -->
-<h1 class="h3 mb-4 text-gray-800">{{ __('Create new page') }}</h1>
+<h1 class="h3 mb-4 text-gray-800">{{ __('Create new page') }} {{ (isset($language)) ? $language->lang : 'English' }} </h1>  
+<!--ovde je default jezik Engleski, on se prvi unosi-->
 <div class='row'>
     <div class="offset-lg-2 col-lg-8">
         <!-- Basic Card Example -->
@@ -27,9 +28,10 @@
                             <div class="col-sm-3">
                                 <select name='page_id' class="form-control">
                                     <option value='0'>Top level page</option>
-                                    @if(count($pagesTopLevel) > 0)
-                                        @foreach($pagesTopLevel as $value)
-                                        <option value='{{ $value->id }}' {{ (old('page_id') == $value->id) ? 'selected':'' }}>{{ $value->title }}</option>
+                                    @if(count($data) > 0)
+                                        @foreach($data as $value)
+                                        
+                                        <option value='{{ $value->pivot->page_id }}' >{{ $value->pivot->title }}</option>
                                         @endforeach
                                     @endif
                                 </select>
@@ -216,8 +218,12 @@
                         </div>
                     </fieldset>
                     <div class="form-group text-right">
-                        <button type='submit' class="btn btn-primary">Save</button>
+                        <button type='submit' name='action' value='save' class="btn btn-primary">Save</button>
+                           <button type='submit' name='action' value='save-and-add-next' class="btn btn-warning" {{ (isset($language)&&($language->id==$lastpriority->id)) ? 'disabled' : ""}}>
+          Save&Translate
+      </button>
                     </div>
+                 
                 </form>
             </div>
         </div>
